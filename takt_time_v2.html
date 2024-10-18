@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Takt Timer</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .timer { font-size: 128px; margin: 20px; }
+        .count { font-size: 64px; margin: 10px; }
+        .input { margin-top: 20px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div>
+        <label for="item-count">Number of items:</label>
+        <input type="number" id="item-count" class="input">
+    </div>
+    <div>
+        <label for="production-time">Available production time (minutes):</label>
+        <input type="number" id="production-time" step="0.01" class="input">
+    </div>
+    <button onclick="startTimer()">Start Timer</button>
+    
+    <div class="timer" id="timer-display">00:00</div>
+    <div class="count" id="counts-display">Items completed: 0 | Expected items completed: 0</div>
+    <button onclick="incrementCompleted()">Mark Item as Completed</button>
+    
+    <audio id="beep-sound" src="beep.mp3" preload="auto"></audio>
+
+    <script>
+        let itemCount = 0;
+        let productionTime = 0;
+        let completedItems = 0;
+        let expectedItems = 0;
+        let interval;
+        let logData = [];
+
+        function startTimer() {
+            itemCount = document.getElementById('item-count').value;
+            productionTime = parseFloat(document.getElementById('production-time').value);
+            const taktTime = (productionTime * 60) / itemCount;
+            logData.push(`Shift Start: ${new Date().toLocaleString()}`);
+            startCountdown(taktTime);
+        }
+
+        function startCountdown(taktTime) {
+            clearInterval(interval);
+            let timeLeft = taktTime;
+            interval = setInterval(() => {
+                if (timeLeft <= 0) {
+                    expectedItems++;
+                    document.getElementById('counts-display').innerText = `Items completed: ${completedItems} | Expected items completed: ${expectedItems}`;
+                    updateBackgroundColor();
+                    document.getElementById('beep-sound').play();
+                    logData.push(`Expected Item ${expectedItems}: ${new Date().toLocaleString()}`);
+                    timeLeft = taktTime;
+                }
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = (timeLeft % 60).toFixed(2);  // Use .toFixed(2) for decimal precision
+                document.getElementById('timer-display').innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                timeLeft -= 0.01; // Update by hundredths of a second for better precision
+            }, 10); // Update every hundredth of a second
+        }
+
+        function incrementCompleted() {
+            completedItems++;
+            document.getElementById('counts-display').innerText = `Items completed: ${completedItems} | Expected items completed: ${expectedItems}`;
+            logData.push(`Completed Item ${completedItems}: ${new Date().toLocaleString()}`);
+            updateBackgroundColor();
+            checkReset();
+        }
+
+        function updateBackgroundColor() {
+            if (completedItems > expectedItems) {
+                document.body.style.backgroundColor = "green";
+                document.getElementById('timer-display').style.color = "white";
+                document.getElementById('counts-display').style.color = "white";
+            } else if (completedItems < expectedItems) {
+                document.body.style.backgroundColor = "red";
+                document.getElementById('timer-display').style.color = "white";
+                document.getElementById('counts-display').style.color = "white";
+            } else {
+                document.body.style.backgroundColor = "white";
+                document.getElementById('timer-display').style.color = "black";
+                document.getElementById('counts-display').style.color = "black";
+            }
+        }
+
+        function checkReset() {
+            if (completedItems >= itemCount) {
+                logData.push(`Shift End: ${new Date().toLocaleString()}`);
+                alert("All items completed. Resetting the page.");
+                exportLogData();
+                location.reload();
+            }
+        }
+
+        function exportLogData() {
+            const blob = new Blob([logData.join('\n')], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `shift_log_${new Date().toLocaleDateString()}.txt`;
+            link.click();
+        }
+    </script>
+</body>
+</html>

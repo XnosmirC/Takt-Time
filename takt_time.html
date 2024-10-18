@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Takt Timer</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .timer { font-size: 48px; margin: 20px; }
+        .count { font-size: 24px; margin: 10px; }
+        .input { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div>
+        <label for="item-count">Number of items:</label>
+        <input type="number" id="item-count" class="input">
+    </div>
+    <div>
+        <label for="production-time">Available production time (minutes):</label>
+        <input type="number" id="production-time" class="input">
+    </div>
+    <button onclick="startTimer()">Start Timer</button>
+    
+    <div class="timer" id="timer-display">00:00</div>
+    <div class="count" id="counts-display">Items completed: 0 | Expected items completed: 0</div>
+    <button onclick="incrementCompleted()">Mark Item as Completed</button>
+
+    <script>
+        let itemCount = 0;
+        let productionTime = 0;
+        let completedItems = 0;
+        let expectedItems = 0;
+        let interval;
+
+        function startTimer() {
+            itemCount = document.getElementById('item-count').value;
+            productionTime = document.getElementById('production-time').value;
+            const taktTime = (productionTime * 60) / itemCount;
+            startCountdown(taktTime);
+        }
+
+        function startCountdown(taktTime) {
+            clearInterval(interval);
+            let timeLeft = taktTime;
+            interval = setInterval(() => {
+                if (timeLeft <= 0) {
+                    expectedItems++;
+                    document.getElementById('counts-display').innerText = `Items completed: ${completedItems} | Expected items completed: ${expectedItems}`;
+                    updateBackgroundColor();
+                    timeLeft = taktTime;
+                }
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                document.getElementById('timer-display').innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                timeLeft--;
+            }, 1000);
+        }
+
+        function incrementCompleted() {
+            completedItems++;
+            document.getElementById('counts-display').innerText = `Items completed: ${completedItems} | Expected items completed: ${expectedItems}`;
+            updateBackgroundColor();
+        }
+
+        function updateBackgroundColor() {
+            if (completedItems > expectedItems) {
+                document.body.style.backgroundColor = "green";
+            } else if (completedItems < expectedItems) {
+                document.body.style.backgroundColor = "red";
+            } else {
+                document.body.style.backgroundColor = "white";
+            }
+        }
+    </script>
+</body>
+</html>

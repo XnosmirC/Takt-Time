@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Takt Timer Input</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .input { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div>
+        <label for="item-count">Number of items:</label>
+        <input type="number" id="item-count" class="input">
+    </div>
+    <div>
+        <label for="production-time">Available production time (minutes):</label>
+        <input type="number" id="production-time" step="0.01" class="input">
+    </div>
+    <button onclick="startTimer()">Start Timer</button>
+
+    <script>
+        function startTimer() {
+            const itemCount = document.getElementById('item-count').value;
+            const productionTime = parseFloat(document.getElementById('production-time').value);
+            if (itemCount && !isNaN(productionTime)) {
+                console.log('Setting itemCount:', itemCount);  // Debugging
+                console.log('Setting productionTime:', productionTime);  // Debugging
+                localStorage.setItem('itemCount', itemCount);
+                localStorage.setItem('productionTime', productionTime);
+                window.location.href = 'timer.html';
+            } else {
+                alert("Please enter both the number of items and the available production time.");
+            }
+        }
+    </script>
+</body>
+</html>

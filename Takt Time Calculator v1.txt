@@ -1,0 +1,16 @@
+def calculate_takt_time(available_production_time, customer_demand):
+    takt_time = available_production_time / customer_demand
+    return takt_time
+
+def calculate_batch_takt_time(available_production_time, customer_demand, items_per_batch):
+    takt_time_per_batch = available_production_time / (customer_demand / items_per_batch)
+    return takt_time_per_batch
+
+n_items = 36
+
+available_production_time = 9 * 60  # convert to minutes
+
+takt_time_n = calculate_takt_time(available_production_time, n_items)
+
+print(f"Takt Time for {n_items} items: {takt_time_n} minutes/item")
+

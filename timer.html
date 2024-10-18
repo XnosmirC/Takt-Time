@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Takt Timer</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; }
+        .timer { font-size: 128px; margin: 0; padding: 20px; position: fixed; top: 0; width: 100%; }
+        .count-container { display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; padding: 20px; }
+        .count { font-size: 96px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="timer" id="timer-display">00:00</div>
+    <div class="count-container">
+        <div class="count">
+            <div>Actual</div>
+            <div id="completed-count">0</div>
+        </div>
+        <div class="count">
+            <div>Expected</div>
+            <div id="expected-count">0</div>
+        </div>
+    </div>
+    <button onclick="incrementCompleted()">Mark Item as Completed</button>
+    
+    <audio id="beep-sound" src="beep.mp3" preload="auto"></audio>
+
+    <script>
+        let itemCount = parseInt(localStorage.getItem('itemCount'));
+        let productionTime = parseFloat(localStorage.getItem('productionTime'));
+        console.log('Retrieved itemCount:', itemCount);  // Debugging
+        console.log('Retrieved productionTime:', productionTime);  // Debugging
+        let completedItems = 0;
+        let expectedItems = 0;
+        let interval;
+        let logData = [];
+
+        if (isNaN(itemCount) || isNaN(productionTime)) {
+            alert("Item count or production time not set or invalid. Redirecting to input page.");
+            window.location.href = 'index.html';
+        } else {
+            const taktTime = (productionTime * 60) / itemCount;
+            logData.push(`Shift Start: ${new Date().toLocaleString()}`);
+            logData.push(`Expected Items: ${itemCount}`);
+            startCountdown(taktTime);
+        }
+
+        function startCountdown(taktTime) {
+            clearInterval(interval);
+            let timeLeft = taktTime;
+            interval = setInterval(() => {
+                if (timeLeft <= 0) {
+                    expectedItems++;
+                    document.getElementById('expected-count').innerText = expectedItems;
+                    updateBackgroundColor();
+                    document.getElementById('beep-sound').play();
+                    logData.push(`Expected Item ${expectedItems}: ${new Date().toLocaleString()}`);
+                    timeLeft = taktTime;
+                }
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = (timeLeft % 60).toFixed(2);
+                document.getElementById('timer-display').innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                timeLeft -= 0.01;
+            }, 10);
+        }
+
+        function incrementCompleted() {
+            completedItems++;
+            document.getElementById('completed-count').innerText = completedItems;
+            logData.push(`Completed Item ${completedItems}: ${new Date().toLocaleString()}`);
+            updateBackgroundColor();
+            checkReset();
+        }
+
+        function updateBackgroundColor() {
+            if (completedItems > expectedItems) {
+                document.body.style.backgroundColor = "green";
+                document.getElementById('timer-display').style.color = "white";
+                document.getElementById('completed-count').style.color = "white";
+                document.getElementById('expected-count').style.color = "white";
+            } else if (completedItems < expectedItems) {
+                document.body.style.backgroundColor = "red";
+                document.getElementById('timer-display').style.color = "white";
+                document.getElementById('completed-count').style.color = "white";
+                document.getElementById('expected-count').style.color = "white";
+            } else {
+                document.body.style.backgroundColor = "white";
+                document.getElementById('timer-display').style.color = "black";
+                document.getElementById('completed-count').style.color = "black";
+                document.getElementById('expected-count').style.color = "black";
+            }
+        }
+
+        function checkReset() {
+            if (completedItems >= itemCount) {
+                logData.push(`Shift End: ${new Date().toLocaleString()}`);
+                alert("All items completed. Resetting the page.");
+                exportLogData();
+                location.reload();
+            }
+        }
+
+        function exportLogData() {
+            const blob = new Blob([logData.join('\n')], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `shift_log_${new Date().toLocaleDateString()}.txt`;
+            link.click();
+        }
+    </script>
+</body>
+</html>

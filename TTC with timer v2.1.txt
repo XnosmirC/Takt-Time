@@ -1,0 +1,31 @@
+import time
+from tqdm import tqdm
+
+def calculate_takt_time(available_production_time, customer_demand):
+    takt_time = available_production_time / customer_demand
+    return takt_time
+
+def calculate_batch_takt_time(available_production_time, customer_demand, items_per_batch):
+    takt_time_per_batch = available_production_time / (customer_demand / items_per_batch)
+    return takt_time_per_batch
+
+def start_timer(takt_time):
+    start_time = time.time()
+    return start_time
+
+def items_completed(start_time, takt_time):
+    elapsed_time = time.time() - start_time
+    completed_items = elapsed_time // takt_time
+    return completed_items
+
+n_items = 36
+available_production_time = 9 * 60  # convert to minutes
+takt_time_n = calculate_takt_time(available_production_time, n_items)
+start_time = start_timer(takt_time_n)
+
+# Create a visual timer for the duration of available production time
+for _ in tqdm(range(int(available_production_time * 60))):  # converted to seconds
+    time.sleep(1)
+
+completed_items = items_completed(start_time, takt_time_n)
+print(f"Items completed: {completed_items}")

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Weekly Summary</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .log-input { margin: 20px; }
+        .summary { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Weekly Summary</h1>
+    <div>
+        <input type="file" id="log-files" class="log-input" multiple>
+        <button onclick="generateSummary()">Generate Summary</button>
+    </div>
+    <div class="summary" id="summary-result"></div>
+
+    <script>
+        function parseLogFile(logContent) {
+            const lines = logContent.split('\n');
+            const logData = { expected: 0, completed: 0, timestamps: [], totalExpected: 0 };
+            
+            lines.forEach(line => {
+                if (line.includes("Expected Items:")) {
+                    logData.totalExpected = parseInt(line.split(": ")[1]);
+                }
+                if (line.includes("Expected Item")) {
+                    logData.expected++;
+                    logData.timestamps.push({ type: "Expected", time: line.split(": ")[1] });
+                }
+                if (line.includes("Completed Item")) {
+                    logData.completed++;
+                    logData.timestamps.push({ type: "Completed", time: line.split(": ")[1] });
+                }
+            });
+
+            return logData;
+        }
+
+        function generateSummary() {
+            const files = document.getElementById('log-files').files;
+            if (files.length === 0) {
+                alert("Please upload log files.");
+                return;
+            }
+
+            let summaryData = [];
+            let promises = [];
+
+            Array.from(files).forEach((file, index) => {
+                promises.push(new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const logData = parseLogFile(event.target.result);
+                        summaryData.push({ day: index + 1, ...logData });
+                        resolve();
+                    };
+                    reader.onerror = reject;
+                    reader.readAsText(file);
+                }));
+            });
+
+            Promise.all(promises).then(() => displaySummary(summaryData));
+        }
+
+        function displaySummary(summaryData) {
+            let totalExpected = 0;
+            let totalCompleted = 0;
+            let summaryHtml = "<h2>Day-by-Day Summary</h2><table border='1'><tr><th>Day</th><th>Expected Items</th><th>Completed Items</th><th>Performance</th></tr>";
+
+            summaryData.forEach(data => {
+                totalExpected += data.totalExpected;
+                totalCompleted += data.completed;
+                const performance = data.totalExpected ? ((data.completed / data.totalExpected) * 100).toFixed(2) : 'N/A';
+                summaryHtml += `<tr><td>Day ${data.day}</td><td>${data.totalExpected}</td><td>${data.completed}</td><td>${performance}%</td></tr>`;
+            });
+
+            const totalPerformance = totalExpected ? ((totalCompleted / totalExpected) * 100).toFixed(2) : 'N/A';
+            summaryHtml += `<tr><td>Total</td><td>${totalExpected}</td><td>${totalCompleted}</td><td>${totalPerformance}%</td></tr></table>`;
+
+            // Detailed Timestamps Section
+            summaryHtml += "<h2>Detailed Timestamps</h2>";
+            summaryData.forEach(data => {
+                summaryHtml += `<h3>Day ${data.day}</h3>`;
+                data.timestamps.forEach(timestamp => {
+                    summaryHtml += `<p>${timestamp.type} at ${timestamp.time}</p>`;
+                });
+            });
+
+            document.getElementById('summary-result').innerHTML = summaryHtml;
+        }
+    </script>
+</body>
+</html>
